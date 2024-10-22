@@ -1,0 +1,19 @@
+services:
+  websocket:
+    build:
+      context: ./websc
+      dockerfile: Dockerfile
+    ports:
+      - 8010:8000
+    develop:
+      watch:
+        - action: sync
+          path: ./websc
+          target: /app
+        - action: rebuild
+          path: ./websc/req.txt
+    restart: on-failure
+  
+
+
+  

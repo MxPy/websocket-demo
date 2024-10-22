@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Client</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+            background-color: #f5f5f5;
+        }
+        .message-container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .message {
+            padding: 10px;
+            margin: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.8em;
+        }
+        .status {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .clear-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .clear-btn:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Messages</h1>
+    <div id="connectionStatus" class="status disconnected">
+        Status: Rozłączono
+    </div>
+    <div class="message-container" id="messages"></div>
+    <button class="clear-btn" onclick="clearMessages()">Wyczyść wiadomości</button>
+
+    <script>
+        let ws;
+        const messagesDiv = document.getElementById('messages');
+        const statusDiv = document.getElementById('connectionStatus');
+        
+        function connect() {
+            ws = new WebSocket('ws://localhost:8010/connect');
+
+            ws.onopen = () => {
+                console.log('Połączono z WebSocket');
+                statusDiv.textContent = 'Status: Połączono';
+                statusDiv.className = 'status connected';
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message';
+
+                let timestamp = '';
+                if (data.timestamp) {
+                    const date = new Date(data.timestamp);
+                    timestamp = date.toLocaleTimeString();
+                }
+                messageDiv.innerHTML = `
+                    <span class="timestamp">[${timestamp}]</span>
+                    <span class="content">${JSON.stringify(data)}</span>
+                `;
+
+                messagesDiv.appendChild(messageDiv);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            };
+
+            ws.onclose = () => {
+                console.log('Rozłączono z WebSocket');
+                statusDiv.textContent = 'Status: Rozłączono. Próba ponownego połączenia za 5 sekund...';
+                statusDiv.className = 'status disconnected';
+                setTimeout(connect, 5000);
+            };
+
+            ws.onerror = (error) => {
+                console.error('Błąd WebSocket:', error);
+                statusDiv.textContent = 'Status: Błąd połączenia';
+                statusDiv.className = 'status disconnected';
+            };
+        }
+
+        function clearMessages() {
+            messagesDiv.innerHTML = '';
+        }
+        connect();
+
+        window.onbeforeunload = () => {
+            if (ws) {
+                ws.close();
+            }
+        };
+    </script>
+</body>
+</html>
