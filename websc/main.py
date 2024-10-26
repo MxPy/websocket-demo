@@ -6,7 +6,6 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import AsyncGenerator
 import uvicorn
-import aio_pika
 import logging
 import sys
 import asyncio
